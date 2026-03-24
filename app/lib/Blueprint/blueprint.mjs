@@ -132,9 +132,9 @@ class Blueprint {
         return hook
       })
     )
-    const hookFns = hookModules?.map((hookModule) => hookModule?.value?.default)
+    const hookFns = hookModules?.map((hookModule) => hookModule?.value?.default).filter((hookModule) => hookModule)
     const hookResults = await Promise.allSettled(
-      hookFns.map((hookFn) => {
+      hookFns?.map?.((hookFn) => {
         return hookFn(mergedData, { _, fs, date, File, log })
       })
     )
@@ -183,7 +183,7 @@ class Blueprint {
 
       await fs.ensureDir(destination)
 
-      scaffold({ source: this.filesPath, destination, onlyFiles: false, data: mergedData })
+      await scaffold({ source: this.filesPath, destination, onlyFiles: false, data: mergedData })
 
       log.success(`generated instance`)
 
