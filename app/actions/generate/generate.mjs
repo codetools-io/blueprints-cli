@@ -1,24 +1,7 @@
-import path from 'path'
-import fs from 'fs-extra'
 import Blueprint from '../../lib/Blueprint/index.mjs'
-import { getMetadata, getTemplateData, log } from '../../utilities.mjs'
+import { getBlueprintPath, getMetadata, getTemplateData, log } from '../../utilities.mjs'
 
-import { CURRENT_PATH, PROJECT_BLUEPRINTS_PATH, GLOBAL_BLUEPRINTS_PATH } from '../../config.mjs'
-
-function getBlueprintPath(name) {
-  const globalBlueprintPath = path.resolve(GLOBAL_BLUEPRINTS_PATH, `./${name}`)
-  const projectBlueprintPath = path.resolve(PROJECT_BLUEPRINTS_PATH, `./${name}`)
-
-  if (fs.pathExistsSync(projectBlueprintPath)) {
-    return projectBlueprintPath
-  }
-
-  if (fs.pathExistsSync(globalBlueprintPath)) {
-    return globalBlueprintPath
-  }
-
-  return null
-}
+import { CURRENT_PATH } from '../../config.mjs'
 
 export default async function generate(blueprintName, blueprintInstance, command) {
   try {
@@ -48,7 +31,7 @@ export default async function generate(blueprintName, blueprintInstance, command
         ...data,
         ...metadata,
       },
-      ai: false,
+      mode: 'scaffold',
     })
 
     this.output = log.output()
