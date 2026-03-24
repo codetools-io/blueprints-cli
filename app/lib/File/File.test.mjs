@@ -1,10 +1,15 @@
-import { describe, test, expect } from 'vitest'
+import { describe, test, expect, afterEach } from 'vitest'
 import fs from 'fs-extra'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import File from './File.mjs'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
+const newFilepath = path.resolve(__dirname, './test/example2.txt')
+
+afterEach(async () => {
+  await fs.remove(newFilepath).catch(() => {})
+})
 
 describe('File', () => {
   test('can be initialized', () => {
@@ -77,7 +82,6 @@ describe('File', () => {
 
     const newFile = new File(newFilepath)
     const newFileContent = await newFile.content
-    expect(newFileContent).toContain('Hello, World!')
-    fs.remove(newFilepath)
+    expect(newFileContent).toEqual('Hello, World!')
   })
 })
