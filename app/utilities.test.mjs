@@ -1,6 +1,7 @@
 import { describe, test, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import {
   getAbsolutePaths,
+  getBlueprintPath,
   getMetadata,
   getObject,
   getRenderedValue,
@@ -12,6 +13,17 @@ import {
   scaffold,
   setValue,
 } from './utilities.mjs'
+
+vi.mock('./config.mjs', async () => {
+  const { fileURLToPath } = await import('url')
+  const pathMod = await import('path')
+  const testDir = fileURLToPath(new URL('..', import.meta.url))
+  const fixturesPath = pathMod.default.resolve(testDir, 'test/fixtures')
+  return {
+    PROJECT_BLUEPRINTS_PATH: pathMod.default.resolve(fixturesPath, 'project-example/.blueprints'),
+    GLOBAL_BLUEPRINTS_PATH: pathMod.default.resolve(fixturesPath, 'global-blueprints'),
+  }
+})
 import path from 'path'
 import os from 'os'
 import fs from 'fs-extra'
@@ -129,6 +141,30 @@ describe('Utilities', () => {
     test('can log error output', () => {
       log.error('first error')
       expect(console.error).toHaveBeenCalledTimes(1)
+    })
+
+    test('log.success renders ✅ prefix', () => {
+      log.clear()
+      log.success('done')
+      expect(log.output()).toEqual('✅ done')
+    })
+
+    test('log.info renders ℹ️ prefix', () => {
+      log.clear()
+      log.info('info message')
+      expect(log.output()).toEqual('ℹ️ info message')
+    })
+
+    test('log.clear resets output to empty string', () => {
+      log.text('something')
+      log.clear()
+      expect(log.output()).toEqual('')
+    })
+
+    test('log.table renders object keys into output', () => {
+      log.clear()
+      log.table({ myKey: 'myValue' })
+      expect(log.output()).toContain('myKey')
     })
   })
 
@@ -263,6 +299,23 @@ describe('Utilities', () => {
       const result = await scaffold({ source: '/nonexistent/source', destination: dest })
       expect(result.files).toEqual([])
       expect(result.templates).toEqual([])
+    })
+  })
+
+  describe('getBlueprintPath', () => {
+    it('returns project path when blueprint exists in project', () => {
+      const result = getBlueprintPath('example')
+      expect(result).toMatch(/project-example\/.blueprints\/example$/)
+    })
+
+    it('returns global path when blueprint only exists in global', () => {
+      const result = getBlueprintPath('example-2')
+      expect(result).toMatch(/global-blueprints\/example-2$/)
+    })
+
+    it('returns null or undefined when blueprint is not found', () => {
+      const result = getBlueprintPath('this-does-not-exist-at-all')
+      expect(result == null).toBe(true)
     })
   })
 })
