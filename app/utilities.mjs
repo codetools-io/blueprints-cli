@@ -4,6 +4,7 @@ import inflection from 'inflection'
 import * as prop from 'dot-prop'
 import treeify from 'treeify'
 import fs from 'fs-extra'
+import { PROJECT_BLUEPRINTS_PATH, GLOBAL_BLUEPRINTS_PATH } from './config.mjs'
 
 /**
  * Returns absolute paths for a given glob pattern.
@@ -167,6 +168,7 @@ export class log {
     if (process.env.NODE_ENV !== 'test') {
       console.log(this.queue.join('\n'))
     }
+
     return this.queue.join('\n')
   }
 
@@ -282,6 +284,7 @@ export async function scaffold(props = {}) {
     })
     // load the templates
     const allTemplates = await Promise.all(allFiles.map((file) => fs.readFile(file, 'utf-8')))
+
     // generate all directories
     const allGeneratedDirs = await Promise.all(
       allDirs.map((dir) => {
@@ -301,13 +304,28 @@ export async function scaffold(props = {}) {
       })
     )
 
-    return {
+    return Promise.resolve({
       destination: thisDestination,
       files: allFiles,
       dirs: allDirs,
       templates: allTemplates,
-    }
+    })
   } catch (e) {
     throw new Error(e)
   }
+}
+
+export function getBlueprintPath(name) {
+  const globalBlueprintPath = path.resolve(GLOBAL_BLUEPRINTS_PATH, `./${name}`)
+  const projectBlueprintPath = path.resolve(PROJECT_BLUEPRINTS_PATH, `./${name}`)
+
+  if (fs.pathExistsSync(projectBlueprintPath)) {
+    return projectBlueprintPath
+  }
+
+  if (fs.pathExistsSync(globalBlueprintPath)) {
+    return globalBlueprintPath
+  }
+
+  return null
 }
