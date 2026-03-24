@@ -1,6 +1,4 @@
-import path from 'path'
-import fs from 'fs-extra'
-import Bot from '../../lib/Bot/index.mjs'
+import Blueprint from '../../lib/Blueprint/index.mjs'
 import { getBlueprintPath, getMetadata, getTemplateData, log } from '../../utilities.mjs'
 import { CURRENT_PATH } from '../../config.mjs'
 
@@ -21,17 +19,18 @@ export default async function ask(blueprintName, blueprintInstance, command) {
       return
     }
 
-    const bot = new Bot({
+    const blueprint = new Blueprint({
       name: blueprintName,
       location,
     })
 
-    await bot.ask({
+    await blueprint.generate({
       destination,
       data: {
         ...data,
         ...metadata,
       },
+      mode: 'ai',
     })
 
     this.output = log.output()
