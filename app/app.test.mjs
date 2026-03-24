@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach } from 'vitest'
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
 import fs from 'fs-extra'
 import fsp from 'node:fs/promises'
 import os from 'os'
@@ -64,7 +64,15 @@ describe('app', () => {
     })
   })
 
-  describe.skip('generate', () => {
+  describe('generate', () => {
+    let exitSpy
+    beforeEach(() => {
+      exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {})
+    })
+    afterEach(() => {
+      exitSpy.mockRestore()
+    })
+
     test('can show generation status', async () => {
       const { output } = await run('generate mockA mockAInstance')
 
