@@ -6,7 +6,7 @@ import { loadMergedModelRegistry } from '../llm/modelsConfig.mjs'
 import { resolveModelSelection } from '../llm/resolveModel.mjs'
 import { createStructuredChatModel } from '../llm/createStructuredChatModel.mjs'
 import _ from 'lodash'
-import date from 'date-fns'
+import * as date from 'date-fns'
 import { parse } from 'yaml'
 const { merge } = _
 import File from '../../lib/File/index.mjs'
