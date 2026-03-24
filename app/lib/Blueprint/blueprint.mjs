@@ -160,8 +160,11 @@ class Blueprint {
     return Promise.resolve(result)
   }
 
-  async generate({ destination, data = {}, ai = false }) {
-    const generateFn = ai ? 'generateWithAI' : 'generateWithScaffold'
+  async generate({ destination, data = {}, mode = 'scaffold' }) {
+    if (mode !== 'scaffold' && mode !== 'ai') {
+      throw new Error(`Invalid generate mode: ${mode}`)
+    }
+    const generateFn = mode === 'ai' ? 'generateWithAI' : 'generateWithScaffold'
 
     await this.loadConfigFile()
     await this.loadFilesContent()
