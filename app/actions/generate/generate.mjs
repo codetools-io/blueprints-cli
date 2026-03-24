@@ -52,7 +52,11 @@ export default async function generate(blueprintName, blueprintInstance, command
     })
 
     this.output = log.output()
+
+    process.exit(0)
   } catch (error) {
     log.error(error)
+    console.log(error)
+    process.exit(1)
   }
 }
