@@ -1,3 +1,4 @@
+import { describe, test, expect } from 'vitest'
 import help from './help.mjs'
 
 describe('help', () => {

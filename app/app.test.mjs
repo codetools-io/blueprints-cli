@@ -1,3 +1,4 @@
+import { describe, test, expect, beforeEach, afterEach } from 'vitest'
 import fs from 'fs-extra'
 import fsp from 'node:fs/promises'
 import os from 'os'

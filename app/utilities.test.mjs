@@ -1,3 +1,4 @@
+import { describe, test, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import {
   getAbsolutePaths,
   getMetadata,
@@ -12,8 +13,10 @@ import {
   setValue,
 } from './utilities.mjs'
 import path from 'path'
+import os from 'os'
+import fs from 'fs-extra'
 import { fileURLToPath } from 'url'
-import { jest } from '@jest/globals'
+import { createTmpDir, cleanupTmpDir } from '../test/helpers/tmpDir.mjs'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
@@ -96,7 +99,7 @@ describe('Utilities', () => {
     const original = console.error
 
     beforeEach(() => {
-      console.error = jest.fn()
+      console.error = vi.fn()
     })
 
     afterEach(() => {
@@ -212,6 +215,54 @@ describe('Utilities', () => {
       const result = getRenderedValue(template, data, matcherRegex)
 
       expect(result).toEqual('This is a test called ')
+    })
+  })
+
+  describe('scaffold', () => {
+    let source
+    let dest
+
+    beforeEach(async () => {
+      source = await createTmpDir('bp-scaffold-src-')
+      dest = await createTmpDir('bp-scaffold-dst-')
+    })
+
+    afterEach(async () => {
+      await cleanupTmpDir(source)
+      await cleanupTmpDir(dest)
+    })
+
+    it('copies files from source to destination', async () => {
+      await fs.outputFile(path.join(source, 'hello.txt'), 'world')
+      await scaffold({ source, destination: dest })
+      expect(await fs.pathExists(path.join(dest, 'hello.txt'))).toBe(true)
+    })
+
+    it('renders {{ templateVar }} in file content', async () => {
+      await fs.outputFile(path.join(source, 'msg.txt'), 'Hello, {{ name }}!')
+      await scaffold({ source, destination: dest, data: { name: 'Alice' } })
+      const content = await fs.readFile(path.join(dest, 'msg.txt'), 'utf8')
+      expect(content).toBe('Hello, Alice!')
+    })
+
+    it('renames __varName__ in filenames using data', async () => {
+      await fs.outputFile(path.join(source, '__name__.txt'), 'content')
+      await scaffold({ source, destination: dest, data: { name: 'Bob' } })
+      expect(await fs.pathExists(path.join(dest, 'Bob.txt'))).toBe(true)
+      expect(await fs.pathExists(path.join(dest, '__name__.txt'))).toBe(false)
+    })
+
+    it('creates destination directories that do not exist', async () => {
+      await fs.outputFile(path.join(source, 'sub/file.txt'), 'hi')
+      const deepDest = path.join(dest, 'new-dir')
+      await scaffold({ source, destination: deepDest })
+      expect(await fs.pathExists(path.join(deepDest, 'sub/file.txt'))).toBe(true)
+    })
+
+    it('returns empty results when source directory does not exist', async () => {
+      const result = await scaffold({ source: '/nonexistent/source', destination: dest })
+      expect(result.files).toEqual([])
+      expect(result.templates).toEqual([])
     })
   })
 })

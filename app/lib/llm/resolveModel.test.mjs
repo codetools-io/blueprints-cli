@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { resolveModelSelection } from './resolveModel.mjs'
 import { DEFAULT_MODEL_ID } from './builtinModels.mjs'
 

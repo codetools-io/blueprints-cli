@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Utilities getMetadata can get metadata 1`] = `
+exports[`Utilities > getMetadata > can get metadata 1`] = `
 {
   "blueprint": "Component",
   "blueprintInstance": "Button",
@@ -33,13 +33,13 @@ exports[`Utilities getMetadata can get metadata 1`] = `
 }
 `;
 
-exports[`Utilities log can log standard output 1`] = `
+exports[`Utilities > log > can log standard output 1`] = `
 "first
 second
 third"
 `;
 
-exports[`Utilities log can log warning output 1`] = `
+exports[`Utilities > log > can log warning output 1`] = `
 "⚠️ first warning
 ⚠️ second warning
 ⚠️ third warning"

@@ -1,4 +1,4 @@
-import { describe, it, expect } from '@jest/globals'
+import { describe, it, expect } from 'vitest'
 import { mergeRegistryFromLayers } from './modelsConfig.mjs'
 import { DEFAULT_MODEL_ID } from './builtinModels.mjs'
 
