@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { mergeRegistryFromLayers } from './modelsConfig.mjs'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import fs from 'fs-extra'
+import { mergeRegistryFromLayers, loadMergedModelRegistry, getGlobalModelsPath, getProjectModelsPath } from './modelsConfig.mjs'
 import { DEFAULT_MODEL_ID } from './builtinModels.mjs'
 
 const builtins = [
@@ -33,5 +34,59 @@ describe('mergeRegistryFromLayers', () => {
     const row = entries.find((e) => e.id === 'gpt-4o-mini')
     expect(row.model).toBe('final-name')
     expect(row.label).toBe('v2')
+  })
+})
+
+describe('loadMergedModelRegistry', () => {
+  let globalPath
+  let projectPath
+
+  beforeEach(() => {
+    globalPath = getGlobalModelsPath()
+    projectPath = getProjectModelsPath()
+  })
+
+  afterEach(async () => {
+    await fs.remove(globalPath).catch(() => {})
+    if (projectPath) await fs.remove(projectPath).catch(() => {})
+  })
+
+  it('reads global models.json when it exists', async () => {
+    await fs.outputJson(globalPath, {
+      defaultModel: 'custom-global',
+      models: [{ id: 'custom-global', provider: 'openai', model: 'custom-model' }],
+    })
+    const { entries, defaultModelId } = await loadMergedModelRegistry()
+    expect(entries.some((e) => e.id === 'custom-global')).toBe(true)
+    expect(defaultModelId).toBe('custom-global')
+  })
+
+  it('reads project models.json when it exists', async () => {
+    if (!projectPath) return
+    await fs.outputJson(projectPath, {
+      models: [{ id: 'proj-model', provider: 'anthropic', model: 'claude-test' }],
+    })
+    const { entries } = await loadMergedModelRegistry()
+    expect(entries.some((e) => e.id === 'proj-model')).toBe(true)
+  })
+})
+
+describe('getGlobalModelsPath', () => {
+  it('returns a string ending with models.json', () => {
+    const p = getGlobalModelsPath()
+    expect(typeof p).toBe('string')
+    expect(p.endsWith('models.json')).toBe(true)
+  })
+})
+
+describe('getProjectModelsPath', () => {
+  it('returns a string ending with models.json or null', () => {
+    const p = getProjectModelsPath()
+    if (p !== null) {
+      expect(typeof p).toBe('string')
+      expect(p.endsWith('models.json')).toBe(true)
+    } else {
+      expect(p).toBeNull()
+    }
   })
 })

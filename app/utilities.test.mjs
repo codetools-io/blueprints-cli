@@ -225,6 +225,16 @@ describe('Utilities', () => {
         }
       `)
     })
+
+    test('initializes array when key does not exist yet', () => {
+      const result = setValue({}, 'colors[0]', 'blue')
+      expect(result).toEqual({ colors: ['blue'] })
+    })
+
+    test('appends to array when no index specified', () => {
+      const result = setValue({ tags: ['a'] }, 'tags[]', 'b')
+      expect(result.tags).toContain('b')
+    })
   })
 
   describe('getRenderedValue', () => {

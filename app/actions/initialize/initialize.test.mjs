@@ -34,4 +34,17 @@ describe('initialize', () => {
     await initialize(tmpDir, {})
     await expect(initialize(tmpDir, {})).resolves.not.toThrow()
   })
+
+  it('creates .blueprints in current directory when no path given', async () => {
+    const originalCwd = process.cwd()
+    process.chdir(tmpDir)
+    try {
+      await initialize(undefined, {})
+      const exists = await fs.pathExists(path.join(tmpDir, '.blueprints'))
+      expect(exists).toBe(true)
+    } finally {
+      process.chdir(originalCwd)
+      await fs.remove(path.join(tmpDir, '.blueprints'))
+    }
+  })
 })

@@ -91,4 +91,43 @@ describe('resolveModelSelection', () => {
     })
     expect(r.id).toBe('beta')
   })
+
+  it('throws for unknown explicit cli model id', () => {
+    expect(() =>
+      resolveModelSelection({
+        cliModelId: 'unknown-model',
+        cliModelWasExplicit: true,
+        entries,
+        fileDefaultModelId: DEFAULT_MODEL_ID,
+        blueprintModelId: undefined,
+      })
+    ).toThrow(/Unknown model id "unknown-model"/)
+  })
+
+  it('throws when fileDefaultModelId is set but not in registry', () => {
+    expect(() =>
+      resolveModelSelection({
+        cliModelId: undefined,
+        cliModelWasExplicit: false,
+        entries,
+        fileDefaultModelId: 'missing-default',
+        blueprintModelId: undefined,
+      })
+    ).toThrow(/defaultModel "missing-default" is not defined/)
+  })
+
+  it('falls back to DEFAULT_MODEL_ID when fileDefaultModelId is null', () => {
+    const entriesWithDefault = [
+      ...entries,
+      { id: DEFAULT_MODEL_ID, provider: 'openai', model: DEFAULT_MODEL_ID },
+    ]
+    const r = resolveModelSelection({
+      cliModelId: undefined,
+      cliModelWasExplicit: false,
+      entries: entriesWithDefault,
+      fileDefaultModelId: null,
+      blueprintModelId: undefined,
+    })
+    expect(r.id).toBe(DEFAULT_MODEL_ID)
+  })
 })

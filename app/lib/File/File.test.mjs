@@ -61,6 +61,15 @@ describe('File', () => {
     expect(file.content.match(/new text/g)).toEqual(['new text'])
   })
 
+  test('ensureText does not duplicate text that already exists', async () => {
+    const filepath = path.resolve(__dirname, './test/example.txt')
+    const file = new File(filepath)
+    file.content = Promise.resolve('existing text')
+    await file.ensureText('existing text').apply()
+
+    expect(file.content.match(/existing text/g)).toEqual(['existing text'])
+  })
+
   test('can replace text', async () => {
     const filepath = path.resolve(__dirname, './test/example.txt')
     const file = new File(filepath)
