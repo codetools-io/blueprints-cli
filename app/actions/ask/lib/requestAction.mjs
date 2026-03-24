@@ -1,21 +1,16 @@
-import { PromptTemplate } from 'langchain/prompts'
-import { ChatOpenAI } from 'langchain/chat_models/openai'
-import { RunnableSequence } from 'langchain/schema/runnable'
-import {
-  OutputFixingParser,
-  StructuredOutputParser,
-} from 'langchain/output_parsers'
+import { PromptTemplate } from '@langchain/core/prompts'
+import { ChatOpenAI } from '@langchain/openai'
 import { z } from 'zod'
 import { log } from '../../../utilities.mjs'
-const filesTemplate = `Perform the provided action using the provided source files.
 
-{format_instructions}
+const filesTemplate = `Perform the provided action using the provided source files.
 
 Action: {action}
 
 Source Files:
 {files}
 `
+
 const Response = z.object({
   files: z
     .object({
@@ -24,36 +19,28 @@ const Response = z.object({
     })
     .array(),
 })
-const parser = StructuredOutputParser.fromZodSchema(Response)
-const fixParser = OutputFixingParser.fromLLM(
-  new ChatOpenAI({ temperature: 0 }),
-  parser
-)
+
 const defaultProps = {
-  modelName: 'gpt-4-1106-preview',
+  model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
   temperature: 0,
 }
 
 export default async function requestAction(props = {}) {
   try {
     const { action, files, ...rest } = { ...defaultProps, ...props }
-    const model = new ChatOpenAI({ ...rest })
-    const formatInstructions = parser.getFormatInstructions()
+    const model = new ChatOpenAI(rest)
+    const structuredModel = model.withStructuredOutput(Response)
     const promptTemplate = new PromptTemplate({
       template: filesTemplate,
       inputVariables: ['action', 'files'],
-      partialVariables: {
-        format_instructions: formatInstructions,
-      },
     })
-    const chain = RunnableSequence.from([promptTemplate, model, parser])
-    const result = await chain.invoke({ action, files })
+    const userPrompt = await promptTemplate.format({ action, files })
+    const result = await structuredModel.invoke(userPrompt)
 
     return result
   } catch (err) {
     log.output()
     log.error(err.message)
     throw err
-    // const output = await fixParser.parse(badOutput)
   }
 }

@@ -1,9 +1,7 @@
 import path from 'path'
 import fs from 'fs-extra'
-import { PromptTemplate, PipelinePromptTemplate } from 'langchain/prompts'
-import { ChatOpenAI } from 'langchain/chat_models/openai'
-import { LLMChain } from 'langchain/chains'
-import { OutputFixingParser, StructuredOutputParser } from 'langchain/output_parsers'
+import { PromptTemplate } from '@langchain/core/prompts'
+import { ChatOpenAI } from '@langchain/openai'
 import { z } from 'zod'
 import _ from 'lodash'
 import date from 'date-fns'
@@ -208,10 +206,7 @@ class Blueprint {
     await this.loadPrompts()
 
     const mergedData = merge({}, this.config.data, data)
-    const modelProps = {
-      modelName: 'gpt-4-1106-preview',
-      temperature: 0,
-    }
+    const modelName = process.env.OPENAI_MODEL || 'gpt-4o-mini'
 
     const ResponseFormat = z.object({
       destination: z.string().describe('base location for where files will be created'),
@@ -223,59 +218,50 @@ class Blueprint {
         .array()
         .describe('files to be created'),
     })
-    const parser = StructuredOutputParser.fromZodSchema(ResponseFormat)
-    const fixParser = OutputFixingParser.fromLLM(new ChatOpenAI({ ...modelProps }), parser)
-    try {
-      const model = new ChatOpenAI({ ...modelProps })
-      const formatInstructions = parser.getFormatInstructions()
-      const finalPrompt = new PromptTemplate({
-        template: this.prompts.at(-1).template,
-        inputVariables: this.prompts.at(-1).meta.input_variables,
-      })
-      const pipelinePrompts =
-        this.prompts.length > 1
-          ? this.prompts.slice(0, -1).map((prompt) => {
-              return new PromptTemplate({
-                template: prompt.template,
-                inputVariables: prompt.meta.input_variables,
-              })
-            })
-          : []
-      const composedPrompt = new PipelinePromptTemplate({
-        pipelinePrompts,
-        finalPrompt,
-      })
-      const templates = Object.entries(this.filesContent).map(([fileName, fileContent]) => {
-        return `template_name: ${fileName}\n\ntemplate_content:\n${fileContent}\n\n`
-      })
-      const chain = new LLMChain({
-        llm: model,
-        prompt: composedPrompt,
-        outputParser: parser,
-      })
-      const result = await chain.call({
-        format_instructions: formatInstructions,
-        template_variables: JSON.stringify(mergedData),
-        templates,
-      })
 
-      const files = result.text.files
-      await Promise.all(files.map((file) => fs.outputFile(file.path, file.content)))
+    const templates = Object.entries(this.filesContent).map(([fileName, fileContent]) => {
+      return `template_name: ${fileName}\n\ntemplate_content:\n${fileContent}\n\n`
+    })
 
-      log.success(`generated instance with AI (attempt 1)`)
-
-      return Promise.resolve({ type: this.name, location: destination, data })
-    } catch (err) {
-      const result = await fixParser.parse(err.message)
-
-      const files = result.files
-
-      await Promise.all(files.map((file) => fs.outputFile(file.path, file.content)))
-
-      log.success(`generated instance with AI (attempt 2)`)
-
-      return Promise.resolve({ type: this.name, location: destination, data })
+    const promptInputs = {
+      format_instructions:
+        'Respond with structured data matching the enforced schema (files with path and content, and destination).',
+      template_variables: JSON.stringify(mergedData),
+      templates,
     }
+
+    const promptParts = []
+    for (const fragment of this.prompts) {
+      const inputVariables = fragment.meta?.input_variables ?? []
+      const pt = new PromptTemplate({
+        template: fragment.template,
+        inputVariables,
+      })
+      promptParts.push(await pt.format(promptInputs))
+    }
+    const userPrompt = promptParts.join('\n\n')
+
+    const model = new ChatOpenAI({
+      model: modelName,
+      temperature: 0,
+    })
+    const structuredModel = model.withStructuredOutput(ResponseFormat)
+
+    const writeFiles = async (files) => {
+      await Promise.all(
+        files.map((file) => {
+          const target = path.isAbsolute(file.path) ? file.path : path.join(destination, file.path)
+          return fs.outputFile(target, file.content)
+        })
+      )
+    }
+
+    const result = await structuredModel.invoke(userPrompt)
+    await writeFiles(result.files)
+
+    log.success(`generated instance with AI`)
+
+    return Promise.resolve({ type: this.name, location: destination, data })
   }
 
   async loadPromptFile(filepath) {
