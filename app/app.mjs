@@ -19,7 +19,7 @@ app
   .argument('<blueprint>', 'name of the blueprint to use')
   .argument('<blueprintInstance>', 'name of the blueprint instance to create')
   .option('-d, --dest <destination>', 'which directory to place the files')
-  .option('-m, --model <model>', 'AI model to use', 'gpt-4-1106-preview')
+  .option('-m, --model <model>', 'AI model to use', 'gpt-4o-mini')
   .alias('a')
   .action(ask)
 

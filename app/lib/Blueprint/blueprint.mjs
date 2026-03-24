@@ -203,6 +203,8 @@ class Blueprint {
       throw new Error('blueprint does not exist')
     }
 
+    await this.loadConfigFile()
+    await this.loadFilesContent()
     await this.loadPrompts()
 
     const mergedData = merge({}, this.config.data, data)
