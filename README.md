@@ -82,13 +82,65 @@ Below is a table outlining the available commands, their descriptions, and optio
 
 | Command | Description | Options |
 | ------- | ----------- | ------- |
+| `ask\|a <blueprint> <blueprintInstance>` | Generate files using AI and blueprint prompts/templates. | `-d, --dest <destination>`: Output directory.<br>`-m, --model <id>`: Model id from the registry (see `bp models`). |
 | `generate\|g <blueprint> <blueprintInstance>` | Generate files from a blueprint. | `-d, --dest <destination>`: Specify the directory for the files.<br>`<args>`: Additional arguments for template data and metadata. |
+| `models\|md` | List configured AI model ids, providers, and API model names. | None |
 | `help [command]` | Display help for a command. | None |
 | `import <globalBlueprint> [localBlueprint]` | Import a global blueprint to a local project. | None |
 | `init [projectPath]` | Initialize a local blueprints project. | None |
 | `list\|ls [namespace]` | List all available blueprints. | `-l, --long`: Show more details about each blueprint. |
 | `new <blueprint>` | Create a new blueprint. | `-g, --global`: Create the blueprint globally. <br> `-s, --source [sourcePath]`: Specify an initial source path for blueprint files. |
 | `remove\|rm <blueprint>` | Remove a blueprint. | `-g, --global`: Remove a global blueprint. |
+
+## AI generation (`bp ask`)
+
+`bp ask` uses LangChain with structured output. You need an API key for whichever **provider** your chosen model uses:
+
+| Provider | Environment variable |
+| -------- | -------------------- |
+| OpenAI | `OPENAI_API_KEY` |
+| Anthropic | `ANTHROPIC_API_KEY` |
+| Google (Gemini) | `GOOGLE_API_KEY` |
+
+Run **`bp models`** (alias **`bp md`**) to see built-in and configured model **ids**, providers, and provider-native model names.
+
+### How the model is chosen
+
+Precedence (first match wins):
+
+1. **`bp ask ... -m <id>`** — registry id (see `bp models`).
+2. **`BP_MODEL`** — same id as above.
+3. **`blueprint.json`** — optional top-level **`"model": "<id>"`**.
+4. **`OPENAI_MODEL`** — OpenAI API model name only (skips the id registry; legacy escape hatch).
+5. **`defaultModel`** in config (see below).
+6. Built-in default id **`gpt-4o-mini`**.
+
+### Extending the model list
+
+Add **`~/.blueprints/models.json`** and/or **`<project>/.blueprints/models.json`**. The project file is merged **after** the global file; entries with the same **`id`** override earlier ones.
+
+```json
+{
+  "defaultModel": "work-gpt",
+  "models": [
+    {
+      "id": "work-gpt",
+      "provider": "openai",
+      "model": "gpt-4o",
+      "label": "Work OpenAI",
+      "temperature": 0
+    },
+    {
+      "id": "work-claude",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "label": "Work Anthropic"
+    }
+  ]
+}
+```
+
+Each entry needs **`id`**, **`provider`** (`openai`, `anthropic`, or `google`), and **`model`** (the name expected by that provider’s API). Optional: **`label`**, **`temperature`**, **`maxTokens`**.
 
 ## Glossary
 

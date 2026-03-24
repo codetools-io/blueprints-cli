@@ -14,20 +14,21 @@ const PROJECT_MODELS_PATH = PROJECT_BLUEPRINTS_PATH
   : null
 
 /**
- * Merge builtins, then global file, then project file (later overrides earlier by id).
- * @returns {Promise<{ entries: ModelEntry[], defaultModelId: string, configDefaultFromFile: string | null }>}
+ * Pure merge: builtins then each config layer in order (later overrides id).
+ * @param {ModelEntry[]} builtinModels
+ * @param {ModelsFile[]} layers parsed JSON objects (omit missing files)
+ * @returns {{ entries: ModelEntry[], defaultModelId: string, configDefaultFromFile: string | null }}
  */
-export async function loadMergedModelRegistry() {
+export function mergeRegistryFromLayers(builtinModels, layers) {
   const byId = new Map()
-  for (const e of BUILTIN_MODELS) {
+  for (const e of builtinModels) {
     byId.set(e.id, { ...e })
   }
 
   let configDefaultFromFile = null
 
-  const applyFile = async (filePath) => {
-    if (!filePath || !(await fs.pathExists(filePath))) return
-    const raw = await fs.readJson(filePath)
+  for (const raw of layers) {
+    if (!raw) continue
     if (raw.defaultModel && typeof raw.defaultModel === 'string') {
       configDefaultFromFile = raw.defaultModel
     }
@@ -46,13 +47,25 @@ export async function loadMergedModelRegistry() {
     }
   }
 
-  await applyFile(GLOBAL_MODELS_PATH)
-  await applyFile(PROJECT_MODELS_PATH)
-
   const entries = [...byId.values()]
   const defaultModelId = configDefaultFromFile || DEFAULT_MODEL_ID
 
   return { entries, defaultModelId, configDefaultFromFile }
+}
+
+/**
+ * Merge builtins, then global file, then project file (later overrides earlier by id).
+ * @returns {Promise<{ entries: ModelEntry[], defaultModelId: string, configDefaultFromFile: string | null }>}
+ */
+export async function loadMergedModelRegistry() {
+  const layers = []
+  if (await fs.pathExists(GLOBAL_MODELS_PATH)) {
+    layers.push(await fs.readJson(GLOBAL_MODELS_PATH))
+  }
+  if (PROJECT_MODELS_PATH && (await fs.pathExists(PROJECT_MODELS_PATH))) {
+    layers.push(await fs.readJson(PROJECT_MODELS_PATH))
+  }
+  return mergeRegistryFromLayers(BUILTIN_MODELS, layers)
 }
 
 export function getGlobalModelsPath() {
