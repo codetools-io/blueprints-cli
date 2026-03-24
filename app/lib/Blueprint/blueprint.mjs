@@ -1,8 +1,10 @@
 import path from 'path'
 import fs from 'fs-extra'
 import { PromptTemplate } from '@langchain/core/prompts'
-import { ChatOpenAI } from '@langchain/openai'
 import { z } from 'zod'
+import { loadMergedModelRegistry } from '../llm/modelsConfig.mjs'
+import { resolveModelSelection } from '../llm/resolveModel.mjs'
+import { createStructuredChatModel } from '../llm/createStructuredChatModel.mjs'
 import _ from 'lodash'
 import date from 'date-fns'
 import { parse } from 'yaml'
@@ -158,7 +160,7 @@ class Blueprint {
     return Promise.resolve(result)
   }
 
-  async generate({ destination, data = {}, mode = 'scaffold' }) {
+  async generate({ destination, data = {}, mode = 'scaffold', modelId, cliModelWasExplicit = false }) {
     if (mode !== 'scaffold' && mode !== 'ai') {
       throw new Error(`Invalid generate mode: ${mode}`)
     }
@@ -167,7 +169,7 @@ class Blueprint {
     await this.loadConfigFile()
     await this.loadFilesContent()
     await this.preGenerate({ destination, data })
-    await this[generateFn]({ destination, data })
+    await this[generateFn]({ destination, data, modelId, cliModelWasExplicit })
     await this.postGenerate({ destination, data })
   }
 
@@ -194,7 +196,7 @@ class Blueprint {
     }
   }
 
-  async generateWithAI({ destination, data = {} }) {
+  async generateWithAI({ destination, data = {}, modelId, cliModelWasExplicit = false }) {
     if (!destination) {
       throw new Error('no destination given for blueprint instance')
     }
@@ -208,7 +210,15 @@ class Blueprint {
     await this.loadPrompts()
 
     const mergedData = merge({}, this.config.data, data)
-    const modelName = process.env.OPENAI_MODEL || 'gpt-4o-mini'
+
+    const { entries, defaultModelId } = await loadMergedModelRegistry()
+    const spec = resolveModelSelection({
+      cliModelId: modelId,
+      cliModelWasExplicit,
+      entries,
+      fileDefaultModelId: defaultModelId,
+      blueprintModelId: this.config.model,
+    })
 
     const ResponseFormat = z.object({
       destination: z.string().describe('base location for where files will be created'),
@@ -243,11 +253,7 @@ class Blueprint {
     }
     const userPrompt = promptParts.join('\n\n')
 
-    const model = new ChatOpenAI({
-      model: modelName,
-      temperature: 0,
-    })
-    const structuredModel = model.withStructuredOutput(ResponseFormat)
+    const structuredModel = await createStructuredChatModel(spec, ResponseFormat)
 
     const writeFiles = async (files) => {
       await Promise.all(

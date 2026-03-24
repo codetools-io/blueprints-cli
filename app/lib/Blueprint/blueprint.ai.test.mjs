@@ -11,11 +11,9 @@ const mockBlueprintPath = path.join(projectRoot, '.blueprints/mockA')
 const invokeMock = jest.fn()
 
 beforeAll(async () => {
-  jest.unstable_mockModule('@langchain/openai', () => ({
-    ChatOpenAI: jest.fn().mockImplementation(() => ({
-      withStructuredOutput: jest.fn().mockReturnValue({
-        invoke: invokeMock,
-      }),
+  jest.unstable_mockModule('../llm/createStructuredChatModel.mjs', () => ({
+    createStructuredChatModel: jest.fn(async () => ({
+      invoke: invokeMock,
     })),
   }))
 })

@@ -8,6 +8,7 @@ import list from './actions/list/index.mjs'
 import remove from './actions/remove/index.mjs'
 import help from './actions/help/index.mjs'
 import ask from './actions/ask/index.mjs'
+import modelsCommand from './actions/models/index.mjs'
 
 const app = new Command()
 
@@ -19,9 +20,15 @@ app
   .argument('<blueprint>', 'name of the blueprint to use')
   .argument('<blueprintInstance>', 'name of the blueprint instance to create')
   .option('-d, --dest <destination>', 'which directory to place the files')
-  .option('-m, --model <model>', 'AI model to use', 'gpt-4o-mini')
+  .option('-m, --model <id>', 'model id from registry (see bp models)')
   .alias('a')
   .action(ask)
+
+app
+  .command('models')
+  .description('list configured AI model ids and providers')
+  .alias('md')
+  .action(modelsCommand)
 
 app
   .command('generate')

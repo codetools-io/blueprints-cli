@@ -24,6 +24,10 @@ export default async function ask(blueprintName, blueprintInstance, command) {
       location,
     })
 
+    const opts = typeof command.opts === 'function' ? command.opts() : {}
+    const cliModelWasExplicit = Object.prototype.hasOwnProperty.call(opts, 'model')
+    const modelId = opts.model
+
     await blueprint.generate({
       destination,
       data: {
@@ -31,6 +35,8 @@ export default async function ask(blueprintName, blueprintInstance, command) {
         ...metadata,
       },
       mode: 'ai',
+      modelId,
+      cliModelWasExplicit,
     })
 
     this.output = log.output()

@@ -1,7 +1,9 @@
 import { PromptTemplate } from '@langchain/core/prompts'
-import { ChatOpenAI } from '@langchain/openai'
 import { z } from 'zod'
 import { log } from '../../../utilities.mjs'
+import { loadMergedModelRegistry } from '../../../lib/llm/modelsConfig.mjs'
+import { resolveModelSelection } from '../../../lib/llm/resolveModel.mjs'
+import { createStructuredChatModel } from '../../../lib/llm/createStructuredChatModel.mjs'
 
 const filesTemplate = `Perform the provided action using the provided source files.
 
@@ -20,16 +22,24 @@ const Response = z.object({
     .array(),
 })
 
-const defaultProps = {
-  model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-  temperature: 0,
-}
-
 export default async function requestAction(props = {}) {
   try {
-    const { action, files, ...rest } = { ...defaultProps, ...props }
-    const model = new ChatOpenAI(rest)
-    const structuredModel = model.withStructuredOutput(Response)
+    const { action, files, modelId, temperature } = props
+
+    const { entries, defaultModelId } = await loadMergedModelRegistry()
+    const spec = resolveModelSelection({
+      cliModelId: modelId,
+      cliModelWasExplicit: modelId != null && String(modelId).length > 0,
+      entries,
+      fileDefaultModelId: defaultModelId,
+      blueprintModelId: undefined,
+    })
+
+    if (temperature != null) {
+      spec.temperature = temperature
+    }
+
+    const structuredModel = await createStructuredChatModel(spec, Response)
     const promptTemplate = new PromptTemplate({
       template: filesTemplate,
       inputVariables: ['action', 'files'],
