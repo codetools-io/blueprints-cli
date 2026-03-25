@@ -11,6 +11,7 @@ import { parse } from 'yaml'
 const { merge } = _
 import File from '../../lib/File/index.mjs'
 import { getAbsolutePaths, log, scaffold } from '../../utilities.mjs'
+import { BlueprintError, CODES } from '../../errors.mjs'
 
 class Blueprint {
   constructor({ name, location, source }) {
@@ -138,6 +139,11 @@ class Blueprint {
         return hookFn(mergedData, { _, fs, date, File, log })
       })
     )
+    const failures = hookResults.filter((r) => r.status === 'rejected')
+    if (failures.length > 0) {
+      const messages = failures.map((r) => r.reason?.message ?? String(r.reason)).join('; ')
+      throw new BlueprintError(`${name} hook failed: ${messages}`, CODES.LIFECYCLE_SCRIPT_ERROR)
+    }
     log.success(`executed ${name} hook`)
     return hookResults
   }
@@ -160,7 +166,7 @@ class Blueprint {
     return Promise.resolve(result)
   }
 
-  async generate({ destination, data = {}, mode = 'scaffold', modelId, cliModelWasExplicit = false }) {
+  async generate({ destination, data = {}, mode = 'scaffold', dryRun = false, modelId, cliModelWasExplicit = false }) {
     if (mode !== 'scaffold' && mode !== 'ai') {
       throw new Error(`Invalid generate mode: ${mode}`)
     }
@@ -168,12 +174,21 @@ class Blueprint {
 
     await this.loadConfigFile()
     await this.loadFilesContent()
-    await this.preGenerate({ destination, data })
-    await this[generateFn]({ destination, data, modelId, cliModelWasExplicit })
-    await this.postGenerate({ destination, data })
+
+    if (!dryRun) {
+      await this.preGenerate({ destination, data })
+    }
+
+    const result = await this[generateFn]({ destination, data, dryRun, modelId, cliModelWasExplicit })
+
+    if (!dryRun) {
+      await this.postGenerate({ destination, data })
+    }
+
+    return result
   }
 
-  async generateWithScaffold({ destination, data = {} }) {
+  async generateWithScaffold({ destination, data = {}, dryRun = false }) {
     try {
       if (!destination) {
         throw new Error('no destination given for blueprint instance')
@@ -183,6 +198,11 @@ class Blueprint {
         throw new Error('blueprint does not exist')
       }
       const mergedData = merge({}, this.config.data, data)
+
+      if (dryRun) {
+        const result = await scaffold({ source: this.filesPath, destination, onlyFiles: false, data: mergedData, simulate: true })
+        return { dryRun: true, destination, files: result.files }
+      }
 
       await fs.ensureDir(destination)
 

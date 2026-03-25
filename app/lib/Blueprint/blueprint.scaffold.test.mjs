@@ -105,6 +105,37 @@ describe('Blueprint', () => {
       const result = await bp.generateWithScaffold({ destination: dest, data: { name: 'Bob' } })
       expect(result).toMatchObject({ type: 'example', location: dest })
     })
+
+    it('dry-run: returns { dryRun: true, destination, files } without writing to disk', async () => {
+      const bp = new Blueprint({ name: 'example', location: fixtureBlueprint })
+      await bp.loadConfigFile()
+      const result = await bp.generateWithScaffold({ destination: dest, data: { name: 'Alice' }, dryRun: true })
+      expect(result.dryRun).toBe(true)
+      expect(result.destination).toBe(dest)
+      expect(Array.isArray(result.files)).toBe(true)
+      // No files should be written to disk
+      const destExists = await fs.pathExists(path.join(dest, 'users/Alice.txt'))
+      expect(destExists).toBe(false)
+    })
+
+    it('dry-run: rendered file entries have path and content', async () => {
+      const bp = new Blueprint({ name: 'example', location: fixtureBlueprint })
+      await bp.loadConfigFile()
+      const result = await bp.generateWithScaffold({ destination: dest, data: { name: 'Alice' }, dryRun: true })
+      expect(result.files.length).toBeGreaterThan(0)
+      result.files.forEach((f) => {
+        expect(f).toHaveProperty('path')
+        expect(f).toHaveProperty('content')
+      })
+    })
+
+    it('dry-run: rendered content contains substituted variable values', async () => {
+      const bp = new Blueprint({ name: 'example', location: fixtureBlueprint })
+      await bp.loadConfigFile()
+      const result = await bp.generateWithScaffold({ destination: dest, data: { name: 'Alice' }, dryRun: true })
+      const txtFile = result.files.find((f) => f.path.endsWith('.txt'))
+      expect(txtFile.content).toContain('Alice')
+    })
   })
 
   describe('remove', () => {
