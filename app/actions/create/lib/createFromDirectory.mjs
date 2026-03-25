@@ -5,6 +5,7 @@ import {
   PROJECT_BLUEPRINTS_PATH,
   GLOBAL_BLUEPRINTS_PATH,
 } from '../../../config.mjs'
+import { BlueprintError, CODES } from '../../../errors.mjs'
 const DEFAULT_SCRIPT = `
 export default async function(data, libraries) {
   // fs docs: https://github.com/jprichardson/node-fs-extra
@@ -32,7 +33,7 @@ export default async function createFromDirectory(blueprintName, command) {
 
   try {
     if (fs.pathExistsSync(location)) {
-      throw new Error(`A blueprint called ${blueprintName} already exists`)
+      throw new BlueprintError(`A blueprint called ${blueprintName} already exists`, CODES.BLUEPRINT_ALREADY_EXISTS)
     }
     await fs.outputFile(
       path.resolve(location, './scripts/preGenerate.js'),
@@ -57,6 +58,7 @@ export default async function createFromDirectory(blueprintName, command) {
     return {
       success: true,
       message: `${blueprintName} was created at ${location}`,
+      location,
     }
   } catch (error) {
     throw error

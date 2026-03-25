@@ -18,8 +18,11 @@ vi.mock('../../lib/Blueprint/index.mjs', () => ({
 import Blueprint from '../../lib/Blueprint/index.mjs'
 import list from './list.mjs'
 
+function makeCtx(json = false) {
+  return { optsWithGlobals: () => ({ json }) }
+}
+
 beforeEach(() => {
-  // Reset Blueprint to the default implementation before each test
   Blueprint.mockImplementation(function (opts) {
     this.name = opts.name
     this.location = opts.location
@@ -33,60 +36,78 @@ afterEach(() => {
 
 describe('list', () => {
   it('includes global blueprints section header in output', async () => {
-    const ctx = {}
+    const ctx = makeCtx()
     await list.call(ctx, '', { long: false })
     expect(ctx.output).toContain('--- Global Blueprints ---')
   })
 
   it('includes project blueprints section header in output', async () => {
-    const ctx = {}
+    const ctx = makeCtx()
     await list.call(ctx, '', { long: false })
     expect(ctx.output).toContain('--- Project Blueprints ---')
   })
 
   it('lists global blueprint names from fixture directory', async () => {
-    const ctx = {}
+    const ctx = makeCtx()
     await list.call(ctx, '', { long: false })
     // test/fixtures/global-blueprints contains 'example' and 'example-2'
     expect(ctx.output).toContain('example')
   })
 
   it('lists project blueprint names from fixture directory', async () => {
-    const ctx = {}
+    const ctx = makeCtx()
     await list.call(ctx, '', { long: false })
     // test/fixtures/project-example/.blueprints contains 'example'
     expect(ctx.output).toContain('example')
   })
 
   it('includes the blueprint location path in output', async () => {
-    const ctx = {}
+    const ctx = makeCtx()
     await list.call(ctx, '', { long: false })
     expect(ctx.output).toContain(TEST_CONFIG.GLOBAL_BLUEPRINTS_PATH)
   })
 
   it('shows "no global blueprints found" when global dir does not exist', async () => {
     vi.spyOn(fs, 'pathExists').mockResolvedValue(false)
-    const ctx = {}
+    const ctx = makeCtx()
     await list.call(ctx, '', { long: false })
     expect(ctx.output).toContain('no global blueprints found')
     expect(ctx.output).toContain('no project blueprints found')
   })
 
   it('shows description when --long flag and blueprint has description', async () => {
-    // All Blueprint instances get a description so both global and project sections are covered
     Blueprint.mockImplementation(function (opts) {
       this.name = opts.name
       this.location = opts.location
       this.config = { description: 'A test blueprint description' }
     })
-    const ctx = {}
+    const ctx = makeCtx()
     await list.call(ctx, '', { long: true })
     expect(ctx.output).toContain('Description: A test blueprint description')
   })
 
   it('does not show description when --long flag but no description set', async () => {
-    const ctx = {}
+    const ctx = makeCtx()
     await list.call(ctx, '', { long: true })
     expect(ctx.output).not.toContain('Description:')
+  })
+
+  it('returns valid JSON with global and project arrays when --json flag is set', async () => {
+    const ctx = makeCtx(true)
+    await list.call(ctx, '', { long: false })
+    const parsed = JSON.parse(ctx.output)
+    expect(Array.isArray(parsed.global)).toBe(true)
+    expect(Array.isArray(parsed.project)).toBe(true)
+  })
+
+  it('JSON output entries have name and location fields', async () => {
+    const ctx = makeCtx(true)
+    await list.call(ctx, '', { long: false })
+    const parsed = JSON.parse(ctx.output)
+    const allEntries = [...parsed.global, ...parsed.project]
+    allEntries.forEach((entry) => {
+      expect(entry).toHaveProperty('name')
+      expect(entry).toHaveProperty('location')
+    })
   })
 })

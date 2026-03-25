@@ -166,6 +166,75 @@ describe('Utilities', () => {
       log.table({ myKey: 'myValue' })
       expect(log.output()).toContain('myKey')
     })
+
+    describe('JSON mode', () => {
+      beforeEach(() => {
+        log.clear()
+        log.jsonMode = false
+      })
+
+      afterEach(() => {
+        log.jsonMode = false
+        log.clear()
+      })
+
+      test('log.json() stores payload and log.output() returns JSON string', () => {
+        log.jsonMode = true
+        log.json({ success: true, items: [1, 2] })
+        const result = log.output()
+        const parsed = JSON.parse(result)
+        expect(parsed.success).toBe(true)
+        expect(parsed.items).toEqual([1, 2])
+      })
+
+      test('log.output() returns text when jsonMode is false', () => {
+        log.text('hello')
+        const result = log.output()
+        expect(result).toBe('hello')
+      })
+
+      test('log.clear() resets jsonPayload to null', () => {
+        log.jsonMode = true
+        log.json({ foo: 'bar' })
+        log.clear()
+        expect(log.jsonPayload).toBeNull()
+      })
+
+      test('log.clear() also resets text queue', () => {
+        log.text('something')
+        log.clear()
+        expect(log.output()).toBe('')
+      })
+
+      test('log.error() writes JSON to stderr when jsonMode is true', () => {
+        log.jsonMode = true
+        vi.spyOn(process.stderr, 'write').mockImplementation(() => {})
+        const err = new Error('something failed')
+        log.error(err)
+        const written = process.stderr.write.mock.calls[0][0]
+        const parsed = JSON.parse(written)
+        expect(parsed.error.message).toBe('something failed')
+        expect(parsed.error.code).toBe('UNKNOWN_ERROR')
+        process.stderr.write.mockRestore()
+      })
+
+      test('log.error() writes JSON with code when error has a code property', () => {
+        log.jsonMode = true
+        vi.spyOn(process.stderr, 'write').mockImplementation(() => {})
+        const err = new Error('not found')
+        err.code = 'BLUEPRINT_NOT_FOUND'
+        log.error(err)
+        const written = process.stderr.write.mock.calls[0][0]
+        const parsed = JSON.parse(written)
+        expect(parsed.error.code).toBe('BLUEPRINT_NOT_FOUND')
+        process.stderr.write.mockRestore()
+      })
+
+      test('log.error() calls console.error when jsonMode is false', () => {
+        log.error('text error')
+        expect(console.error).toHaveBeenCalledWith(expect.stringContaining('text error'))
+      })
+    })
   })
 
   describe('pipe', () => {
@@ -309,6 +378,33 @@ describe('Utilities', () => {
       const result = await scaffold({ source: '/nonexistent/source', destination: dest })
       expect(result.files).toEqual([])
       expect(result.templates).toEqual([])
+    })
+
+    it('simulate: returns rendered file objects without writing to disk', async () => {
+      await fs.outputFile(path.join(source, '{{ name }}.txt'), 'Hello, {{ name }}!')
+      const result = await scaffold({ source, destination: dest, data: { name: 'Alice' }, simulate: true })
+      expect(result.simulated).toBe(true)
+      expect(Array.isArray(result.files)).toBe(true)
+      expect(result.files.length).toBeGreaterThan(0)
+      result.files.forEach((f) => {
+        expect(f).toHaveProperty('path')
+        expect(f).toHaveProperty('content')
+      })
+      // No files should be written
+      const destItems = await fs.readdir(dest)
+      expect(destItems.length).toBe(0)
+    })
+
+    it('simulate: rendered content contains substituted values', async () => {
+      await fs.outputFile(path.join(source, 'msg.txt'), 'Hello, {{ name }}!')
+      const result = await scaffold({ source, destination: dest, data: { name: 'Bob' }, simulate: true })
+      expect(result.files[0].content).toBe('Hello, Bob!')
+    })
+
+    it('simulate: does not affect normal scaffold behavior when simulate is false', async () => {
+      await fs.outputFile(path.join(source, 'msg.txt'), 'Hello, {{ name }}!')
+      await scaffold({ source, destination: dest, data: { name: 'Carol' }, simulate: false })
+      expect(await fs.pathExists(path.join(dest, 'msg.txt'))).toBe(true)
     })
   })
 

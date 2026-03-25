@@ -1,5 +1,6 @@
 import path from 'path'
 import Blueprint from '../../lib/Blueprint/index.mjs'
+import { log } from '../../utilities.mjs'
 
 import {
   PROJECT_BLUEPRINTS_PATH,
@@ -8,6 +9,9 @@ import {
 
 export default async function remove(blueprintName, options) {
   try {
+    log.clear()
+    log.jsonMode = this.optsWithGlobals().json
+
     const isGlobal = options.global || false
     const globalLocation = path.resolve(GLOBAL_BLUEPRINTS_PATH, blueprintName)
     const projectLocation = path.resolve(PROJECT_BLUEPRINTS_PATH, blueprintName)
@@ -20,8 +24,14 @@ export default async function remove(blueprintName, options) {
 
     await blueprint.remove()
 
-    console.log(`${blueprintName} was removed from: ${location}`)
+    if (log.jsonMode) {
+      log.json({ success: true, blueprint: blueprintName, location })
+    } else {
+      log.success(`${blueprintName} was removed from: ${location}`)
+    }
+
+    this.output = log.output()
   } catch (err) {
-    console.error(err)
+    this.output = log.error(err)
   }
 }

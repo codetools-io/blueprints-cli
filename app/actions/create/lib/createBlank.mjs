@@ -1,6 +1,7 @@
 import path from 'path'
 import fs from 'fs-extra'
 import { PROJECT_ROOT_PATH, GLOBAL_BLUEPRINTS_PATH } from '../../../config.mjs'
+import { BlueprintError, CODES } from '../../../errors.mjs'
 const DEFAULT_SCRIPT = `
 export default async function(data, libraries) {
   // fs docs: https://github.com/jprichardson/node-fs-extra
@@ -48,7 +49,7 @@ export default async function createBlank(blueprintName, options = {}) {
       : path.resolve(PROJECT_ROOT_PATH, `./.blueprints/${blueprintName}`)
 
     if (fs.pathExistsSync(blueprintPath)) {
-      throw new Error(`A blueprint named ${blueprintName} already exists`)
+      throw new BlueprintError(`A blueprint named ${blueprintName} already exists`, CODES.BLUEPRINT_ALREADY_EXISTS)
     }
 
     await fs.ensureDir(
@@ -80,6 +81,7 @@ export default async function createBlank(blueprintName, options = {}) {
     return {
       success: true,
       message: `${blueprintName} was created at ${blueprintPath}`,
+      location: blueprintPath,
     }
   } catch (error) {
     throw error

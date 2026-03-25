@@ -2,6 +2,7 @@ import { Command } from 'commander'
 import pkg from './pkg.mjs'
 import create from './actions/create/index.mjs'
 import generate from './actions/generate/index.mjs'
+import info from './actions/info/index.mjs'
 import _import from './actions/import/index.mjs'
 import initialize from './actions/initialize/index.mjs'
 import list from './actions/list/index.mjs'
@@ -13,6 +14,8 @@ import modelsCommand from './actions/models/index.mjs'
 const app = new Command()
 
 app.name(pkg.name).description(pkg.description).version(pkg.version)
+
+app.option('--json', 'output results as JSON (for machine consumption)', false)
 
 app
   .command('ask')
@@ -36,8 +39,16 @@ app
   .argument('<blueprint>', 'name of the blueprint to use')
   .argument('<blueprintInstance>', 'name of the blueprint instance to create')
   .option('-d, --dest <destination>', 'which directory to place the files')
+  .option('--dry-run', 'preview generation without writing files', false)
   .alias('g')
   .action(generate)
+
+app
+  .command('info')
+  .description('inspect a blueprint and list its required variables')
+  .argument('<blueprint>', 'name of the blueprint to inspect')
+  .alias('i')
+  .action(info)
 
 app
   .command('list')

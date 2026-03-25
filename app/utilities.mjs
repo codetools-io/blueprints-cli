@@ -136,6 +136,8 @@ export function getTemplateData(args) {
  */
 export class log {
   static queue = []
+  static jsonMode = false
+  static jsonPayload = null
 
   static text(...value) {
     this.queue.push(...value)
@@ -158,13 +160,35 @@ export class log {
   }
 
   static error(value) {
-    // throw new Error(`❌ ${value}`)
-    console.error(`❌ ${value}`)
+    if (this.jsonMode) {
+      const payload = JSON.stringify({
+        error: {
+          code: value?.code ?? 'UNKNOWN_ERROR',
+          message: value?.message ?? String(value),
+        },
+      })
+      process.stderr.write(payload + '\n')
+      return payload
+    }
 
-    return `❌ ${value}`
+    const message = value?.message ?? String(value)
+    console.error(`❌ ${message}`)
+    return `❌ ${message}`
+  }
+
+  static json(payload) {
+    this.jsonPayload = payload
   }
 
   static output() {
+    if (this.jsonMode) {
+      const result = JSON.stringify(this.jsonPayload)
+      if (process.env.NODE_ENV !== 'test') {
+        console.log(result)
+      }
+      return result
+    }
+
     if (process.env.NODE_ENV !== 'test') {
       console.log(this.queue.join('\n'))
     }
@@ -174,6 +198,7 @@ export class log {
 
   static clear() {
     this.queue = []
+    this.jsonPayload = null
   }
 }
 
@@ -262,8 +287,9 @@ export async function scaffold(props = {}) {
     contentRegex: /\{\{\s?([A-Za-z0-9_-]+_?[A-Za-z0-9-]+)+\s?\}\}/g,
     fileNameRegex: /__([A-Za-z0-9_-]+_?[A-Za-z0-9-]+)+__/g,
     data: {},
+    simulate: false,
   }
-  const { source, destination, contentRegex, fileNameRegex, data } = { ...defaultProps, ...props }
+  const { source, destination, contentRegex, fileNameRegex, data, simulate } = { ...defaultProps, ...props }
   const cwd = process.cwd()
 
   const thisSource = path.isAbsolute(source) ? source : path.join(cwd, source)
@@ -285,8 +311,25 @@ export async function scaffold(props = {}) {
     // load the templates
     const allTemplates = await Promise.all(allFiles.map((file) => fs.readFile(file, 'utf-8')))
 
+    if (simulate) {
+      const simulatedFiles = allTemplates.map((template, index) => {
+        const destinationPath = allFiles[index].replace(thisSource, thisDestination)
+        const renderedPath = getRenderedValue(destinationPath, data, fileNameRegex)
+        const renderedContent = getRenderedValue(template, data, contentRegex)
+        return { path: renderedPath, content: renderedContent }
+      })
+
+      return {
+        destination: thisDestination,
+        files: simulatedFiles,
+        dirs: allDirs,
+        templates: allTemplates,
+        simulated: true,
+      }
+    }
+
     // generate all directories
-    const allGeneratedDirs = await Promise.all(
+    await Promise.all(
       allDirs.map((dir) => {
         const destinationPath = dir.replace(thisSource, thisDestination)
         const renderedPath = getRenderedValue(destinationPath, data, fileNameRegex)
@@ -294,7 +337,7 @@ export async function scaffold(props = {}) {
       })
     )
     // generate files
-    const allGeneratedFiles = await Promise.all(
+    await Promise.all(
       allTemplates.map((template, index) => {
         const destinationPath = allFiles[index].replace(thisSource, thisDestination)
         const renderedPath = getRenderedValue(destinationPath, data, fileNameRegex)
