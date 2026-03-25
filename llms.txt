@@ -1,0 +1,84 @@
+# blueprints-cli
+
+> A CLI tool for generating predefined files and directories from blueprint templates.
+> MCP server available at `bin/mcp-server.mjs` for native agent integration (preferred).
+
+## MCP Server (Preferred for Agents)
+
+If your agent client supports MCP, use the MCP server instead of the CLI. Configure it
+as a stdio server with command `bp-mcp` or `node bin/mcp-server.mjs`.
+
+### MCP Tools
+
+- `list_blueprints` — list all available blueprints; input: `{ namespace?: string }`
+- `info_blueprint` — inspect a blueprint; input: `{ blueprint: string }`
+- `generate_blueprint` — generate files; input: `{ blueprint, instance, destination?, data?, dryRun? }`
+- `create_blueprint` — create a blueprint template; input: `{ name, global?, source? }`
+
+## CLI Usage (When MCP is Not Available)
+
+**Always append `--json`** to all commands for structured, parseable output.
+Never use interactive flags or the `ask`/`models` commands in automated contexts.
+
+### Commands
+
+```
+bp list [namespace] [--json]
+bp info <blueprint> [--json]
+bp generate <blueprint> <instance> [key=value ...] [--dest <dir>] [--dry-run] [--json]
+bp new <name> [--global] [--source <dir>] [--json]
+bp import <globalBlueprint> <localBlueprint> [--json]
+bp remove <blueprint> [--global] [--json]
+bp init [projectPath] [--json]
+```
+
+### Recommended Agent Workflow
+
+1. `bp list --json` — discover available blueprints
+2. `bp info <blueprint> --json` — get required variables
+3. `bp generate <blueprint> <instance> --dry-run --json [key=value ...]` — preview
+4. `bp generate <blueprint> <instance> --json [key=value ...]` — execute
+
+### Passing Template Variables
+
+Extra positional arguments in `key=value` format supply template data:
+
+```
+bp generate component Button styleType=css --json
+```
+
+Auto-generated variables are always available and do NOT need to be supplied:
+`blueprintInstance`, `blueprint`, `blueprintInstanceDestination`,
+`blueprintInstance_ClassFormat`, `blueprintInstance_CamelCaseFormat`,
+`blueprintInstance_PascalCaseFormat`, `blueprintInstance_SnakeCaseFormat`,
+`blueprintInstance_ConstantFormat`, `blueprintInstance_DashedFormat`,
+plus `Pluralized` and `Singularized` variants of each.
+
+## JSON Output Format
+
+Success:
+```json
+{ "success": true, "blueprint": "component", "instance": "Button", "destination": "/path" }
+```
+
+Dry-run:
+```json
+{ "dryRun": true, "destination": "/path", "files": [{ "path": "...", "content": "..." }] }
+```
+
+Error (stderr, exit 1):
+```json
+{ "error": { "code": "BLUEPRINT_NOT_FOUND", "message": "Blueprint \"x\" not found" } }
+```
+
+## Error Codes
+
+- `BLUEPRINT_NOT_FOUND` — blueprint name not found in global or project directories
+- `BLUEPRINT_ALREADY_EXISTS` — create failed because blueprint already exists
+- `INVALID_SOURCE` — import failed because global blueprint does not exist
+- `LIFECYCLE_SCRIPT_ERROR` — preGenerate or postGenerate hook threw an error
+
+## Do NOT Use in Automated Contexts
+
+- `bp ask` — interactive AI generation, requires human input
+- `bp models` — model registry management, not relevant to scaffolding
