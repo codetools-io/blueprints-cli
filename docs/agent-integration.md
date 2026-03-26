@@ -8,26 +8,36 @@ The MCP server exposes blueprints as tools over stdio transport, allowing MCP-co
 
 ### Setup
 
-Add to your MCP client configuration:
+Choose the setup method that matches your context:
+
+**Option 1 — Zero-install via `npx` (recommended for most projects)**
+
+No global install required. Add this to your MCP client configuration:
+
+```json
+{
+  "mcpServers": {
+    "blueprints": {
+      "command": "npx",
+      "args": ["-y", "-p", "@codetools/blueprints-cli", "bp-mcp"]
+    }
+  }
+}
+```
+
+**Option 2 — Auto-discovery in the repo (for contributors and local dev)**
+
+When working inside the `blueprints-cli` repository, an `.mcp.json` file is already present at the project root. MCP-compatible clients (e.g. Claude Code) will detect and connect to the server automatically — no manual configuration needed.
+
+**Option 3 — After a global install**
+
+If you have installed the package globally (`npm install -g @codetools/blueprints-cli`), the `bp-mcp` binary is available directly:
 
 ```json
 {
   "mcpServers": {
     "blueprints": {
       "command": "bp-mcp"
-    }
-  }
-}
-```
-
-Or if running from the repository:
-
-```json
-{
-  "mcpServers": {
-    "blueprints": {
-      "command": "node",
-      "args": ["/path/to/blueprints-cli/bin/mcp-server.mjs"]
     }
   }
 }

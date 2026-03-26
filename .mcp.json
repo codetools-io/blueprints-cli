@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "blueprints": {
+      "command": "node",
+      "args": ["./bin/mcp-server.mjs"]
+    }
+  }
+}

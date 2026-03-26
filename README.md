@@ -46,6 +46,27 @@ bp info statusReport --json
 bp generate statusReport ProjectAlpha projectName="Project Alpha" status="On Track" date=2023-12-08
 ```
 
+## MCP Server (Agent Integration)
+
+blueprints-cli ships an MCP server so AI agents (Claude Code, Claude Desktop, etc.) can call blueprint operations directly without shell execution.
+
+**Recommended — zero-install via `npx`:**
+
+```json
+{
+  "mcpServers": {
+    "blueprints": {
+      "command": "npx",
+      "args": ["-y", "-p", "@codetools/blueprints-cli", "bp-mcp"]
+    }
+  }
+}
+```
+
+**Working inside this repo?** An `.mcp.json` is included at the project root — compatible clients connect automatically with no extra setup.
+
+See [Agent Integration](docs/agent-integration.md) for all setup options, available tools, and CLI JSON mode.
+
 ## Documentation
 
 - [Blueprint Structure](docs/blueprints.md) — directory layout, `blueprint.json` schema, template syntax, lifecycle hooks
