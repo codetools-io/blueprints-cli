@@ -3,10 +3,14 @@ import fs from 'fs-extra'
 import { PROJECT_ROOT_PATH, GLOBAL_BLUEPRINTS_PATH } from '../../../config.mjs'
 import { BlueprintError, CODES } from '../../../errors.mjs'
 
+function unescapeContent(str) {
+  return str.replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\r/g, '\r').replace(/\\\\/g, '\\')
+}
+
 function parseFileSpec(filespec) {
   const colonIdx = filespec.indexOf(':')
   if (colonIdx === -1) return { filePath: filespec, content: '' }
-  return { filePath: filespec.slice(0, colonIdx), content: filespec.slice(colonIdx + 1) }
+  return { filePath: filespec.slice(0, colonIdx), content: unescapeContent(filespec.slice(colonIdx + 1)) }
 }
 const DEFAULT_SCRIPT = `
 export default async function(data, libraries) {

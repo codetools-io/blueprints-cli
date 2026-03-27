@@ -97,6 +97,17 @@ describe('createBlank', () => {
     expect(content).toBe('')
   })
 
+  it('unescapes \\n, \\t, \\r, and \\\\ in inline content', async () => {
+    await createBlank('escape-bp', {
+      file: ['__blueprintInstance__/index.ts:line1\\nline2\\ttabbed\\\\backslash'],
+    })
+    const content = await fs.readFile(
+      path.join(projectBlueprintsPath, 'escape-bp/files/__blueprintInstance__/index.ts'),
+      'utf8'
+    )
+    expect(content).toBe('line1\nline2\ttabbed\\backslash')
+  })
+
   it('creates specified file with inline content when --file uses colon separator', async () => {
     await createBlank('content-bp', {
       file: ['__blueprintInstance__/index.ts:export default function {{ blueprintInstance_ClassFormat }}() {}'],
