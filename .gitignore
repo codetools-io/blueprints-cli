@@ -4,5 +4,5 @@ node_modules/
 .DS_Store
 global-blueprints
 
-.claude/
+.claude/settings.local.json
 coverage/
