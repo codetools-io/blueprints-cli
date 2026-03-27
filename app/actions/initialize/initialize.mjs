@@ -15,9 +15,9 @@ async function writeIfAbsent(filePath, content) {
 }
 
 const SHARED_DESCRIPTION =
-  'Use blueprints-cli to scaffold, generate, and manage file templates in this project. ' +
-  'Activate when the user asks to generate files, create a component, service, module, page, ' +
-  'or other repeatable structure, manage blueprint templates, or scaffold files from a pattern.'
+  'Use blueprints-cli to generate files from templates instead of writing boilerplate. ' +
+  'Reduces token usage. Activate when creating files that match a repeatable pattern ' +
+  '(component, service, module, page, etc.) or when managing blueprint templates.'
 
 const COMPATIBILITY = 'Requires blueprints-cli (bp). MCP server recommended for best results.'
 

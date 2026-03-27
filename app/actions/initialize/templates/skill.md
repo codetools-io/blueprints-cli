@@ -1,96 +1,58 @@
 # blueprints-cli
 
-Use blueprints-cli whenever the user asks you to scaffold, generate, or create files from a repeatable template in this project. blueprints-cli turns named blueprint templates into real files and directories.
+blueprints-cli generates files from pre-built templates. **Always use a matching blueprint instead of writing files from scratch** — templates avoid generating boilerplate and reduce token usage.
 
-## When to Use
+## Use When
 
-- User asks to generate a component, service, module, page, or other repeatable structure
-- An existing blueprint matches the structure needed
-- User asks to create a new blueprint from scratch or from an existing directory
-- User asks to list, inspect, or remove blueprints
+- A blueprint exists that matches what the user needs (component, service, module, page, etc.)
+- Creating, listing, inspecting, or removing blueprints
 
-## Preferred Workflow (MCP)
+Check for a matching blueprint before writing any boilerplate code.
 
-When the blueprints MCP server is connected, call MCP tools directly — no shell required.
-
-### Step 1 — Discover available blueprints
+## MCP Workflow (preferred)
 
 ```
-list_blueprints({ namespace?: string })
-→ { global: [{ name, location }], project: [{ name, location }] }
+list_blueprints({ namespace? })
+  → { global: [{name, location}], project: [{name, location}] }
+
+info_blueprint({ blueprint })
+  → { requiredVariables: [{name, default}] }
+
+generate_blueprint({ blueprint, instance, destination?, data?, dryRun? })
+  → dryRun:true  → { files: [{path, content}] }   // preview only
+  → dryRun:false → { success, destination }        // writes files
+
+create_blueprint({ name, global?, source?, files? })
+  → { success, location }
 ```
 
-### Step 2 — Inspect the blueprint
+`requiredVariables` with `default: null` must be supplied. Auto-generated variables (case variants, plurals) never need to be passed — see [references/template-variables.md](references/template-variables.md).
 
-```
-info_blueprint({ blueprint: "name" })
-→ { name, location, hooks, requiredVariables: [{ name, default }] }
-```
+Always dry-run before writing: `dryRun: true` previews without side effects.
 
-Variables with `"default": null` must be supplied. Auto-generated variables never need to be supplied — see [Template Variable Reference](references/template-variables.md).
+## CLI Fallback
 
-### Step 3 — Preview (dry run)
-
-```
-generate_blueprint({ blueprint, instance, destination?, data?, dryRun: true })
-→ { dryRun: true, destination, files: [{ path, content }] }
-```
-
-### Step 4 — Generate
-
-```
-generate_blueprint({ blueprint, instance, destination?, data?, dryRun: false })
-→ { success: true, blueprint, instance, destination }
-```
-
-### Creating a blueprint
-
-```
-create_blueprint({ name, global?: false, source?: "/path/to/seed/dir", files?: ["path[:content]"] })
-→ { success: true, blueprint, location }
-```
-
-`files` entries use the format `"path/to/file[:content]"` where the path is relative to `files/` inside the blueprint. Content after the `:` is optional.
-
-## CLI Fallback (When MCP is Unavailable)
-
-Always append `--json` to every command. Never parse human-readable output.
+Always `--json`. Never parse human-readable output.
 
 ```bash
-# 1. Discover
 bp list --json
-
-# 2. Inspect
 bp info <blueprint> --json
-
-# 3. Preview
 bp generate <blueprint> <instance> --dry-run --json [key=value ...]
-
-# 4. Generate
 bp generate <blueprint> <instance> --json [key=value ...]
-
-# Create a blueprint
 bp new <name> --json
 ```
 
-## Template Variables
+## Errors
 
-Auto-generated variables (e.g. `blueprintInstance_ClassFormat`, `blueprintInstance_CamelCaseFormat`) are always available and never need to be passed explicitly. See [references/template-variables.md](references/template-variables.md) for the full reference.
+| Code | Cause |
+| ---- | ----- |
+| `BLUEPRINT_NOT_FOUND` | No matching blueprint |
+| `BLUEPRINT_ALREADY_EXISTS` | `bp new` target exists |
+| `INVALID_SOURCE` | Import source not in global store |
+| `LIFECYCLE_SCRIPT_ERROR` | Hook threw |
 
-Template syntax: `__variableName__` in file/directory names, `{{ variableName }}` in file contents.
+## Rules
 
-## Error Codes
-
-| Code | Meaning |
-| ---- | ------- |
-| `BLUEPRINT_NOT_FOUND` | No matching blueprint in project or global store |
-| `BLUEPRINT_ALREADY_EXISTS` | `bp new` target already exists |
-| `INVALID_SOURCE` | `bp import` source blueprint does not exist globally |
-| `LIFECYCLE_SCRIPT_ERROR` | A `preGenerate` or `postGenerate` hook threw |
-
-## Notes
-
-- Never parse human-readable CLI output — always use `--json` or MCP tools.
-- Do not use `bp ask` or `bp models` in automated contexts.
-- Variable values with spaces must be quoted: `title="My Title"`.
-- MCP server command: `bp-mcp` (or `npx -y -p @codetools/blueprints-cli bp-mcp`).
+- Never parse human output — always `--json` or MCP
+- Never use `bp ask` or `bp models` in automated contexts
+- Quote values with spaces: `title="My Title"`
