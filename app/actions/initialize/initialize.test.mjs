@@ -79,13 +79,13 @@ describe('initialize', () => {
     expect(content).toContain('allowed-tools:')
   })
 
-  it('creates .cursor/rules/blueprints.mdc with Cursor frontmatter', async () => {
+  it('creates .agents/skills/blueprints/SKILL.md with standard frontmatter', async () => {
     await initialize.call(makeCtx(), tmpDir, {})
-    const filePath = path.join(tmpDir, '.cursor', 'rules', 'blueprints.mdc')
+    const filePath = path.join(tmpDir, '.agents', 'skills', 'blueprints', 'SKILL.md')
     const exists = await fs.pathExists(filePath)
     expect(exists).toBe(true)
     const content = await fs.readFile(filePath, 'utf-8')
-    expect(content).toContain('alwaysApply:')
+    expect(content).toContain('name: blueprints')
   })
 
   it('creates AGENTS.md at project root', async () => {

@@ -14,17 +14,18 @@ async function writeIfAbsent(filePath, content) {
   return 'created'
 }
 
-const CLAUDE_FRONTMATTER = `---
-description: How to use blueprints-cli to scaffold files in this project
-allowed-tools: mcp__blueprints__list_blueprints, mcp__blueprints__info_blueprint, mcp__blueprints__generate_blueprint, mcp__blueprints__create_blueprint, Bash
+const AGENTS_FRONTMATTER = `---
+name: blueprints
+description: >
+  Use blueprints-cli to scaffold, generate, and manage file templates in this project.
+  Activate when the user asks to generate, create, or scaffold files from repeatable templates.
 ---
 
 `
 
-const CURSOR_FRONTMATTER = `---
+const CLAUDE_FRONTMATTER = `---
 description: How to use blueprints-cli to scaffold files in this project
-globs:
-alwaysApply: false
+allowed-tools: mcp__blueprints__list_blueprints, mcp__blueprints__info_blueprint, mcp__blueprints__generate_blueprint, mcp__blueprints__create_blueprint, Bash
 ---
 
 `
@@ -53,12 +54,12 @@ export default async function initialize(projectPath, command) {
         content: blueprintsReadme,
       },
       {
-        filePath: path.resolve(projectRoot, '.claude/skills/blueprints/SKILL.md'),
-        content: CLAUDE_FRONTMATTER + skillBody,
+        filePath: path.resolve(projectRoot, '.agents/skills/blueprints/SKILL.md'),
+        content: AGENTS_FRONTMATTER + skillBody,
       },
       {
-        filePath: path.resolve(projectRoot, '.cursor/rules/blueprints.mdc'),
-        content: CURSOR_FRONTMATTER + skillBody,
+        filePath: path.resolve(projectRoot, '.claude/skills/blueprints/SKILL.md'),
+        content: CLAUDE_FRONTMATTER + skillBody,
       },
       {
         filePath: path.resolve(projectRoot, 'AGENTS.md'),
