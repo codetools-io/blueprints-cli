@@ -113,7 +113,8 @@ Create a new blueprint template.
 Input: {
   "name":   "component",
   "global": false,
-  "source": "/optional/seed/directory"
+  "source": "/optional/seed/directory",
+  "files":  ["__blueprintInstance__/index.ts:export default function {{ blueprintInstance_ClassFormat }}() {}", "__blueprintInstance__/index.test.ts"]
 }
 
 Output: {
@@ -122,6 +123,8 @@ Output: {
   "location":  "/path/to/.blueprints/component"
 }
 ```
+
+`files` is an array of filespec strings, each with the format `"path/to/file[:content]"`. The path is relative to `files/` inside the blueprint. Content (everything after the first `:`) is optional — omit it to create an empty file. Multiple entries create multiple files. When `files` is provided, the default empty `files/__blueprintInstance__/` directory is not created.
 
 ---
 

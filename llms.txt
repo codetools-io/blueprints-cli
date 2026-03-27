@@ -13,7 +13,7 @@ as a stdio server with command `bp-mcp` or `node bin/mcp-server.mjs`.
 - `list_blueprints` — list all available blueprints; input: `{ namespace?: string }`
 - `info_blueprint` — inspect a blueprint; input: `{ blueprint: string }`
 - `generate_blueprint` — generate files; input: `{ blueprint, instance, destination?, data?, dryRun? }`
-- `create_blueprint` — create a blueprint template; input: `{ name, global?, source? }`
+- `create_blueprint` — create a blueprint template; input: `{ name, global?, source?, files? }`
 
 ## CLI Usage (When MCP is Not Available)
 
@@ -26,7 +26,7 @@ Never use interactive flags or the `ask`/`models` commands in automated contexts
 bp list [namespace] [--json]
 bp info <blueprint> [--json]
 bp generate <blueprint> <instance> [key=value ...] [--dest <dir>] [--dry-run] [--json]
-bp new <name> [--global] [--source <dir>] [--json]
+bp new <name> [--global] [--source <dir>] [--file <filespec>] ... [--json]
 bp import <globalBlueprint> <localBlueprint> [--json]
 bp remove <blueprint> [--global] [--json]
 bp init [projectPath] [--json]

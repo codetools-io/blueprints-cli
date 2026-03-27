@@ -27,7 +27,7 @@ bp generate myBlueprint MyInstance
 | `generate\|g <blueprint> <instance>` | Generate files from a blueprint. Extra `key=value` args supply template data. | `-d, --dest <dir>`: Output directory.<br>`--dry-run`: Preview without writing.<br>`--json`: Machine-readable output. |
 | `info\|i <blueprint>` | Inspect a blueprint and list its required variables. | `--json` |
 | `list\|ls [namespace]` | List all available blueprints. | `-l, --long`: Show descriptions.<br>`--json` |
-| `new <blueprint>` | Create a new blueprint template. | `-g, --global`: Create globally.<br>`-s, --source <path>`: Seed from a directory.<br>`--json` |
+| `new <blueprint>` | Create a new blueprint template. | `-g, --global`: Create globally.<br>`-s, --source <path>`: Seed from a directory.<br>`-f, --file <filespec>`: Add a file (repeatable); format: `path[:content]`.<br>`--json` |
 | `import <globalBlueprint> [localBlueprint]` | Copy a global blueprint into the current project. | `--json` |
 | `remove\|rm <blueprint>` | Remove a blueprint. | `-g, --global`: Remove from global store.<br>`--json` |
 | `init [projectPath]` | Initialize a `.blueprints` directory in a project. | `--json` |

@@ -124,11 +124,24 @@ If any hook rejects its Promise, generation stops and a `LIFECYCLE_SCRIPT_ERROR`
 
 ## Creating Blueprints
 
-**From scratch:**
+**From scratch (empty template directory):**
 ```bash
 bp new myBlueprint          # creates in .blueprints/myBlueprint
 bp new -g myBlueprint       # creates in ~/.blueprints/myBlueprint
 ```
+
+**With specific template files:**
+```bash
+# File paths are relative to files/ inside the blueprint
+bp new myBlueprint -f "__blueprintInstance__/index.ts" -f "__blueprintInstance__/index.test.ts"
+
+# Optionally provide inline content after a colon
+bp new myBlueprint \
+  -f "__blueprintInstance__/index.ts:export default function {{ blueprintInstance_ClassFormat }}() {}" \
+  -f "__blueprintInstance__/index.test.ts"
+```
+
+The `-f, --file` flag is repeatable. Each value has the format `path[:content]` where the path is relative to `files/` and content is optional. When at least one `--file` flag is given, the default empty `files/__blueprintInstance__/` directory is not created.
 
 **From an existing directory:**
 ```bash

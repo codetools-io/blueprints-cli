@@ -100,9 +100,10 @@ server.tool(
     name: z.string().describe('Name for the new blueprint'),
     global: z.boolean().optional().describe('Create blueprint globally (default: false)'),
     source: z.string().optional().describe('Directory to use as initial blueprint files'),
+    files: z.array(z.string()).optional().describe('Files to add to the blueprint; each entry is "path/to/file[:content]" relative to files/'),
   },
-  async ({ name, global: isGlobal = false, source }) => {
-    const command = { global: isGlobal, source: source || false }
+  async ({ name, global: isGlobal = false, source, files }) => {
+    const command = { global: isGlobal, source: source || false, file: files || [] }
     const result = source
       ? await createFromDirectory(name, command)
       : await createBlank(name, command)
