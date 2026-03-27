@@ -22,9 +22,18 @@ generate_blueprint({ blueprint, instance, destination?, data?, dryRun? })
   → dryRun:true  → { files: [{path, content}] }   // preview only
   → dryRun:false → { success, destination }        // writes files
 
-create_blueprint({ name, global?, source?, files? })
+create_blueprint({
+  name,
+  global?,
+  files: [
+    "__blueprintInstance__/index.ts:content here",
+    "__blueprintInstance__/index.test.ts:content here"
+  ]
+})
   → { success, location }
 ```
+
+Always specify every file and its full content in `files` — paths are relative to `files/` inside the blueprint, content follows the `:`. Use `{{ variableName }}` in content and `__variableName__` in paths. Defining content upfront avoids follow-up file edits and reduces token usage.
 
 `requiredVariables` with `default: null` must be supplied. Auto-generated variables (case variants, plurals) never need to be passed — see [references/template-variables.md](references/template-variables.md).
 
@@ -39,7 +48,10 @@ bp list --json
 bp info <blueprint> --json
 bp generate <blueprint> <instance> --dry-run --json [key=value ...]
 bp generate <blueprint> <instance> --json [key=value ...]
-bp new <name> --json
+bp new <name> \
+  -f "__blueprintInstance__/index.ts:content here" \
+  -f "__blueprintInstance__/index.test.ts:content here" \
+  --json
 ```
 
 ## Errors
