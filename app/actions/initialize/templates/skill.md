@@ -27,7 +27,7 @@ info_blueprint({ blueprint: "name" })
 → { name, location, hooks, requiredVariables: [{ name, default }] }
 ```
 
-Variables with `"default": null` must be supplied. Auto-generated variables (see below) never need to be supplied.
+Variables with `"default": null` must be supplied. Auto-generated variables never need to be supplied — see [Template Variable Reference](references/template-variables.md).
 
 ### Step 3 — Preview (dry run)
 
@@ -73,22 +73,9 @@ bp generate <blueprint> <instance> --json [key=value ...]
 bp new <name> --json
 ```
 
-## Auto-Generated Template Variables
+## Template Variables
 
-These are always available — never pass them explicitly:
-
-| Variable | Format | Example (input: `my-service`) |
-| -------- | ------ | ----------------------------- |
-| `blueprintInstance` | as given | `my-service` |
-| `blueprintInstance_ClassFormat` | PascalCase | `MyService` |
-| `blueprintInstance_PascalCaseFormat` | PascalCase | `MyService` |
-| `blueprintInstance_CamelCaseFormat` | camelCase | `myService` |
-| `blueprintInstance_DashedFormat` | kebab-case | `my-service` |
-| `blueprintInstance_SlugFormat` | kebab-case | `my-service` |
-| `blueprintInstance_SnakeCaseFormat` | SNAKE_CASE | `MY_SERVICE` |
-| `blueprintInstance_ConstantFormat` | CONSTANT_CASE | `MY_SERVICE` |
-
-Every variable above also has `Pluralized` and `Singularized` suffixes (e.g. `blueprintInstance_ClassFormatPluralized` → `MyServices`).
+Auto-generated variables (e.g. `blueprintInstance_ClassFormat`, `blueprintInstance_CamelCaseFormat`) are always available and never need to be passed explicitly. See [references/template-variables.md](references/template-variables.md) for the full reference.
 
 Template syntax: `__variableName__` in file/directory names, `{{ variableName }}` in file contents.
 

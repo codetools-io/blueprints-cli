@@ -14,18 +14,26 @@ async function writeIfAbsent(filePath, content) {
   return 'created'
 }
 
+const SHARED_DESCRIPTION =
+  'Use blueprints-cli to scaffold, generate, and manage file templates in this project. ' +
+  'Activate when the user asks to generate files, create a component, service, module, page, ' +
+  'or other repeatable structure, manage blueprint templates, or scaffold files from a pattern.'
+
+const COMPATIBILITY = 'Requires blueprints-cli (bp). MCP server recommended for best results.'
+
 const AGENTS_FRONTMATTER = `---
 name: blueprints
-description: >
-  Use blueprints-cli to scaffold, generate, and manage file templates in this project.
-  Activate when the user asks to generate, create, or scaffold files from repeatable templates.
+description: ${SHARED_DESCRIPTION}
+compatibility: ${COMPATIBILITY}
 ---
 
 `
 
 const CLAUDE_FRONTMATTER = `---
-description: How to use blueprints-cli to scaffold files in this project
-allowed-tools: mcp__blueprints__list_blueprints, mcp__blueprints__info_blueprint, mcp__blueprints__generate_blueprint, mcp__blueprints__create_blueprint, Bash
+name: blueprints
+description: ${SHARED_DESCRIPTION}
+compatibility: ${COMPATIBILITY}
+allowed-tools: mcp__blueprints__list_blueprints mcp__blueprints__info_blueprint mcp__blueprints__generate_blueprint mcp__blueprints__create_blueprint Bash
 ---
 
 `
@@ -43,9 +51,10 @@ export default async function initialize(projectPath, command) {
 
     await fs.ensureDir(projectBlueprintsPath)
 
-    const [blueprintsReadme, skillBody] = await Promise.all([
+    const [blueprintsReadme, skillBody, templateVariablesRef] = await Promise.all([
       readTemplate('blueprints-readme.md'),
       readTemplate('skill.md'),
+      readTemplate('references/template-variables.md'),
     ])
 
     const agentFiles = [
@@ -58,8 +67,16 @@ export default async function initialize(projectPath, command) {
         content: AGENTS_FRONTMATTER + skillBody,
       },
       {
+        filePath: path.resolve(projectRoot, '.agents/skills/blueprints/references/template-variables.md'),
+        content: templateVariablesRef,
+      },
+      {
         filePath: path.resolve(projectRoot, '.claude/skills/blueprints/SKILL.md'),
         content: CLAUDE_FRONTMATTER + skillBody,
+      },
+      {
+        filePath: path.resolve(projectRoot, '.claude/skills/blueprints/references/template-variables.md'),
+        content: templateVariablesRef,
       },
       {
         filePath: path.resolve(projectRoot, 'AGENTS.md'),

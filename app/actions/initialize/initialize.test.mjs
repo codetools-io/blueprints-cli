@@ -70,22 +70,39 @@ describe('initialize', () => {
     expect(exists).toBe(true)
   })
 
-  it('creates .claude/skills/blueprints/SKILL.md with Claude frontmatter', async () => {
-    await initialize.call(makeCtx(), tmpDir, {})
-    const filePath = path.join(tmpDir, '.claude', 'skills', 'blueprints', 'SKILL.md')
-    const exists = await fs.pathExists(filePath)
-    expect(exists).toBe(true)
-    const content = await fs.readFile(filePath, 'utf-8')
-    expect(content).toContain('allowed-tools:')
-  })
-
-  it('creates .agents/skills/blueprints/SKILL.md with standard frontmatter', async () => {
+  it('creates .agents/skills/blueprints/SKILL.md with required name and description fields', async () => {
     await initialize.call(makeCtx(), tmpDir, {})
     const filePath = path.join(tmpDir, '.agents', 'skills', 'blueprints', 'SKILL.md')
     const exists = await fs.pathExists(filePath)
     expect(exists).toBe(true)
     const content = await fs.readFile(filePath, 'utf-8')
     expect(content).toContain('name: blueprints')
+    expect(content).toContain('description:')
+  })
+
+  it('creates .agents/skills/blueprints/references/template-variables.md', async () => {
+    await initialize.call(makeCtx(), tmpDir, {})
+    const filePath = path.join(tmpDir, '.agents', 'skills', 'blueprints', 'references', 'template-variables.md')
+    const exists = await fs.pathExists(filePath)
+    expect(exists).toBe(true)
+  })
+
+  it('creates .claude/skills/blueprints/SKILL.md with name, description, and space-delimited allowed-tools', async () => {
+    await initialize.call(makeCtx(), tmpDir, {})
+    const filePath = path.join(tmpDir, '.claude', 'skills', 'blueprints', 'SKILL.md')
+    const exists = await fs.pathExists(filePath)
+    expect(exists).toBe(true)
+    const content = await fs.readFile(filePath, 'utf-8')
+    expect(content).toContain('name: blueprints')
+    expect(content).toContain('allowed-tools:')
+    expect(content).not.toMatch(/allowed-tools:.*,/)  // must not be comma-delimited
+  })
+
+  it('creates .claude/skills/blueprints/references/template-variables.md', async () => {
+    await initialize.call(makeCtx(), tmpDir, {})
+    const filePath = path.join(tmpDir, '.claude', 'skills', 'blueprints', 'references', 'template-variables.md')
+    const exists = await fs.pathExists(filePath)
+    expect(exists).toBe(true)
   })
 
   it('creates AGENTS.md at project root', async () => {
@@ -105,12 +122,12 @@ describe('initialize', () => {
     expect(content).toBe('DO NOT OVERWRITE')
   })
 
-  it('JSON output includes files array with 4 entries', async () => {
+  it('JSON output includes files array with 6 entries', async () => {
     const ctx = makeCtx(true)
     await initialize.call(ctx, tmpDir, {})
     const parsed = JSON.parse(ctx.output)
     expect(Array.isArray(parsed.files)).toBe(true)
-    expect(parsed.files).toHaveLength(4)
+    expect(parsed.files).toHaveLength(6)
     parsed.files.forEach((entry) => {
       expect(entry).toHaveProperty('file')
       expect(entry).toHaveProperty('status')
