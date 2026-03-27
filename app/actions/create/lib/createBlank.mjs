@@ -2,6 +2,12 @@ import path from 'path'
 import fs from 'fs-extra'
 import { PROJECT_ROOT_PATH, GLOBAL_BLUEPRINTS_PATH } from '../../../config.mjs'
 import { BlueprintError, CODES } from '../../../errors.mjs'
+
+function parseFileSpec(filespec) {
+  const colonIdx = filespec.indexOf(':')
+  if (colonIdx === -1) return { filePath: filespec, content: '' }
+  return { filePath: filespec.slice(0, colonIdx), content: filespec.slice(colonIdx + 1) }
+}
 const DEFAULT_SCRIPT = `
 export default async function(data, libraries) {
   // fs docs: https://github.com/jprichardson/node-fs-extra
@@ -52,9 +58,15 @@ export default async function createBlank(blueprintName, options = {}) {
       throw new BlueprintError(`A blueprint named ${blueprintName} already exists`, CODES.BLUEPRINT_ALREADY_EXISTS)
     }
 
-    await fs.ensureDir(
-      path.resolve(blueprintPath, './files/__blueprintInstance__')
-    )
+    const files = options.file?.length ? options.file : []
+    if (files.length === 0) {
+      await fs.ensureDir(path.resolve(blueprintPath, './files/__blueprintInstance__'))
+    } else {
+      for (const filespec of files) {
+        const { filePath, content } = parseFileSpec(filespec)
+        await fs.outputFile(path.resolve(blueprintPath, './files', filePath), content)
+      }
+    }
     await fs.ensureDir(path.resolve(blueprintPath, './prompts/'))
     await fs.outputFile(
       path.resolve(blueprintPath, './scripts/preGenerate.mjs'),

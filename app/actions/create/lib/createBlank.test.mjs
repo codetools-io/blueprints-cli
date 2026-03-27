@@ -80,6 +80,51 @@ describe('createBlank', () => {
     expect(postExists).toBe(true)
   })
 
+  it('creates files/__blueprintInstance__ when no --file flags given', async () => {
+    await createBlank('no-files-bp')
+    const exists = await fs.pathExists(
+      path.join(projectBlueprintsPath, 'no-files-bp/files/__blueprintInstance__')
+    )
+    expect(exists).toBe(true)
+  })
+
+  it('creates specified file with no content when --file has no colon', async () => {
+    await createBlank('file-bp', { file: ['__blueprintInstance__/index.ts'] })
+    const filePath = path.join(projectBlueprintsPath, 'file-bp/files/__blueprintInstance__/index.ts')
+    const exists = await fs.pathExists(filePath)
+    expect(exists).toBe(true)
+    const content = await fs.readFile(filePath, 'utf8')
+    expect(content).toBe('')
+  })
+
+  it('creates specified file with inline content when --file uses colon separator', async () => {
+    await createBlank('content-bp', {
+      file: ['__blueprintInstance__/index.ts:export default function {{ blueprintInstance_ClassFormat }}() {}'],
+    })
+    const filePath = path.join(projectBlueprintsPath, 'content-bp/files/__blueprintInstance__/index.ts')
+    const content = await fs.readFile(filePath, 'utf8')
+    expect(content).toBe('export default function {{ blueprintInstance_ClassFormat }}() {}')
+  })
+
+  it('creates all files when multiple --file flags are given', async () => {
+    await createBlank('multi-file-bp', {
+      file: ['__blueprintInstance__/index.ts', '__blueprintInstance__/index.test.ts'],
+    })
+    const base = path.join(projectBlueprintsPath, 'multi-file-bp/files/__blueprintInstance__')
+    expect(await fs.pathExists(path.join(base, 'index.ts'))).toBe(true)
+    expect(await fs.pathExists(path.join(base, 'index.test.ts'))).toBe(true)
+  })
+
+  it('does not create files/__blueprintInstance__ dir when --file flags are given', async () => {
+    await createBlank('explicit-files-bp', { file: ['src/helper.ts'] })
+    const defaultDir = path.join(
+      projectBlueprintsPath,
+      'explicit-files-bp/files/__blueprintInstance__'
+    )
+    const exists = await fs.pathExists(defaultDir)
+    expect(exists).toBe(false)
+  })
+
   it('throws when blueprint already exists', async () => {
     await createBlank('my-bp')
     await expect(createBlank('my-bp')).rejects.toThrow('already exists')

@@ -68,6 +68,12 @@ app
     'Path to use for initial blueprint files',
     false
   )
+  .option(
+    '-f, --file <filespec>',
+    'add a file to the blueprint, format: "path/to/file[:content]" (repeatable)',
+    (v, prev) => prev.concat([v]),
+    []
+  )
   .action(create)
 
 app
